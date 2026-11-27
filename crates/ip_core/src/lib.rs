@@ -4,6 +4,9 @@
 //! `Rp_min = (VDD - VOL) / IOL`, `tr = 0.8473 * Rp * Cb` (0.3·VDD → 0.7·VDD),
 //! `Rp_max = tr_max / (0.8473 * Cb)`. Planning estimates only.
 
+pub mod board;
+pub use board::*;
+
 /// ln(0.7 / 0.3): RC time constants between the 30 % and 70 % thresholds.
 pub const K_RISE: f64 = 0.8473;
 /// Fixed fall-time estimate used for f_max (a strong open-drain driver is fast).

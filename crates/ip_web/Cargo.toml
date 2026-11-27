@@ -20,5 +20,7 @@ features = [
   "Window", "Document", "Element", "HtmlElement", "HtmlInputElement", "HtmlSelectElement",
   "HtmlCanvasElement", "HtmlAnchorElement", "CanvasRenderingContext2d", "Event", "EventTarget",
   "PointerEvent", "MouseEvent", "KeyboardEvent", "DomRect", "Blob", "BlobPropertyBag", "Url",
-  "CssStyleDeclaration", "DomTokenList", "Node", "NodeList", "console",
+  "CssStyleDeclaration", "DomTokenList", "Node", "NodeList", "console", "MediaQueryList",
+  "WebGl2RenderingContext", "WebGlBuffer", "WebGlProgram", "WebGlShader", "WebGlUniformLocation",
+  "WebGlVertexArrayObject", "WebGlContextAttributes", "ResizeObserver", "ResizeObserverEntry", "WheelEvent", "HtmlCollection",
 ]

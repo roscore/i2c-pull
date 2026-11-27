@@ -5,112 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'">
   <meta name="referrer" content="no-referrer">
-  <meta name="description" content="I2C pull-up resistor and bus rise-time planner. Runs entirely in your browser.">
-  <title>I2C Pull — 풀업 저항 &amp; 상승 시간 플래너</title>
+  <meta name="description" content="Rebuild your I2C breadboard on screen and see whether it works. Runs entirely in your browser.">
+  <title>I2C Pull — 브레드보드 I2C 진단</title>
   <link rel="icon" href="data:,">
   <link data-trunk rel="css" href="style.css">
-  <link data-trunk rel="rust" href="crates/ip_web/Cargo.toml" data-wasm-opt="0">
+  <link data-trunk rel="rust" href="crates/ip_web/Cargo.toml" data-wasm-opt="z">
 </head>
 <body>
 <div id="app" class="app">
   <header class="toolbar">
-    <h1>I2C Pull <small><span class="ko">풀업 저항 · 상승 시간 플래너</span><span class="en">pull-up &amp; rise-time planner</span></small></h1>
+    <h1>I2C Pull <small><span class="ko">브레드보드 I2C 진단</span><span class="en">breadboard I2C check</span></small></h1>
     <nav class="tools" aria-label="toolbar">
       <span class="presets" role="group" aria-label="presets">
-        <button id="preset0" type="button" title="illustrative"><span class="ko">3.3 V · PCB 센서 4개 · 400 kHz</span><span class="en">3.3 V · 4 sensors on PCB · 400 kHz</span></button>
-        <button id="preset1" type="button" title="illustrative"><span class="ko">5 V · 1 m 케이블 IMU · 100 kHz</span><span class="en">5 V · 1 m cable to IMU · 100 kHz</span></button>
-        <button id="preset2" type="button" title="illustrative"><span class="ko">3.3 V · 10 kΩ 브레이크아웃 3개 · 1 MHz</span><span class="en">3.3 V · 3 breakouts with 10 kΩ · 1 MHz</span></button>
+        <button id="preset0" type="button"></button>
+        <button id="preset1" type="button"></button>
+        <button id="preset2" type="button"></button>
+        <button id="preset3" type="button"></button>
       </span>
-      <button id="pin" type="button">비교 고정</button>
-      <button id="csv" type="button">CSV</button>
+      <button id="pin" type="button"></button>
       <button id="lang" type="button" aria-label="Language / 언어">English</button>
     </nav>
   </header>
 
   <div id="hint" class="hint" role="note">
-    <p><span class="ko">Rp–Cb 그래프의 점을 드래그해 보세요 (또는 포커스 후 방향키). 프리셋은 예시용이며 자유롭게 수정할 수 있습니다.</span>
-       <span class="en">Drag the dot on the Rp–Cb plot (or focus it and use the arrow keys). Presets are illustrative and fully editable.</span></p>
+    <p><span class="ko">부품을 누르거나 보드로 끌어다 놓으면 SDA·SCL·VCC·GND에 자동으로 꽂혀요. 보드 위 부품을 누르면 선택되고 "빼기"(또는 Delete)로 뺄 수 있어요. 끌면 회전, 오른쪽 끌기·두 손가락은 이동, 휠·핀치는 확대, 두 번 누르면 처음 시점. 프리셋은 예시 값이에요.</span>
+       <span class="en">Tap a part or drag it onto the board — it snaps onto SDA/SCL/VCC/GND. Tap a part on the board to select it, then Remove (or Delete). Drag to orbit, right-drag / two fingers to pan, wheel / pinch to zoom, double-tap to reset. Presets use illustrative values.</span></p>
     <button id="hint-close" type="button" aria-label="close hint">×</button>
   </div>
 
   <main class="layout">
-    <section class="hero" aria-label="plots">
-      <div class="hud" aria-live="polite">
-        <div><small>Cb</small><b id="hud-cb">—</b></div>
-        <div><small>Rp</small><b id="hud-rp">—</b></div>
-        <div><small>tr</small><b id="hud-tr">—</b></div>
-        <div><small>f<sub>max</sub></small><b id="hud-f">—</b></div>
+    <section class="hero" aria-label="breadboard">
+      <div id="verdict" class="verdict works" aria-live="polite">
+        <b id="v-status" class="v-status"></b>
+        <div class="v-text"><p id="v-reason"></p><p id="v-fix" class="v-fix"></p></div>
       </div>
-      <p id="verdict" class="verdict" aria-live="polite"></p>
-      <figure class="card plotcard">
-        <figcaption><span class="ko">SCL/SDA 파형 (한 클럭 주기, RC 상승)</span><span class="en">SCL/SDA waveform (one clock period, RC rise)</span></figcaption>
-        <canvas id="wave" class="wave" tabindex="0" role="img" aria-label="SCL/SDA waveform; arrow keys move the cursor"></canvas>
+      <div class="boardbar">
+        <label class="inline"><span><span class="ko">속도</span><span class="en">Speed</span></span>
+          <select id="speed">
+            <option>100 kHz (Standard)</option>
+            <option>400 kHz (Fast)</option>
+            <option>1 MHz (Fast-mode Plus)</option>
+          </select></label>
+        <span id="board-sum" class="sum"></span>
+        <span id="board-msg" class="msg" role="status"></span>
+      </div>
+      <figure class="card boardcard">
+        <div id="stage3d" class="stage3d">
+          <canvas id="board3d" class="board3d" tabindex="0" role="img" aria-label="3D breadboard: drag to orbit, right-drag or two fingers to pan, wheel or pinch to zoom, double-click to reset; arrow keys select a part, Delete removes it"></canvas>
+          <div id="labels3d" class="labels3d" aria-hidden="true"></div>
+          <div class="views3d" role="group" aria-label="camera">
+            <button id="view-persp" type="button"><span class="ko">원근</span><span class="en">3D</span></button>
+            <button id="view-top" type="button"><span class="ko">위</span><span class="en">Top</span></button>
+            <button id="view-side" type="button"><span class="ko">옆</span><span class="en">Side</span></button>
+          </div>
+          <div id="sel3d" class="sel3d hidden" role="status"><span id="sel3d-text"></span><button id="sel3d-rm" type="button">빼기</button></div>
+        </div>
+        <canvas id="board" class="board hidden" tabindex="0" role="img" aria-label="breadboard; arrow keys select a part, Delete removes it"></canvas>
+        <p id="gl-note" class="note hidden"><span class="ko">이 브라우저는 WebGL2를 지원하지 않아 2D 보드로 보여 줘요.</span><span class="en">WebGL2 is not available in this browser, so the board is shown in 2D.</span></p>
       </figure>
-      <div class="lower">
-        <figure class="card plotcard">
-          <figcaption><span class="ko">Rp–Cb 허용 영역 (점 드래그)</span><span class="en">Rp–Cb window (drag the dot)</span></figcaption>
-          <canvas id="plot" class="plot" tabindex="0" role="img" aria-label="Rp versus Cb feasible window; arrow keys move the design point"></canvas>
+      <figure class="card scopecard">
+        <figcaption id="scope-cap"></figcaption>
+        <canvas id="scope" class="scope" role="img" aria-label="SCL signal, slowed down"></canvas>
+      </figure>
+      <section id="compare" class="card compare hidden" aria-live="polite">
+        <h2><span class="ko">A (저장한 회로) ↔ 지금</span><span class="en">A (saved) ↔ now</span></h2>
+        <table id="cmp" class="cmp"></table>
+        <p id="cmp-note" class="note"></p>
+      </section>
+
+      <details id="details" class="card details">
+        <summary><span class="ko">자세히 — 계산기, 그래프, CSV</span><span class="en">Details — calculator, plots, CSV</span></summary>
+        <div class="hud" aria-live="polite">
+          <div><small>Cb</small><b id="hud-cb">—</b></div>
+          <div><small>Rp_eff</small><b id="hud-rp">—</b></div>
+          <div><small>tr</small><b id="hud-tr">—</b></div>
+          <div><small>f<sub>max</sub></small><b id="hud-f">—</b></div>
+        </div>
+        <div class="dgrid">
+          <section id="bus-fields" class="sub">
+            <h2><span class="ko">버스 (보드에서 계산됨 / 직접 수정)</span><span class="en">Bus (from the board / editable)</span></h2>
+            <div class="row">
+              <label><span><span class="ko">공급 전압</span><span class="en">Supply</span> VDD (V)</span><input id="vdd" readonly></label>
+              <label><span><span class="ko">칩 개수</span><span class="en">Chips</span></span><input id="devices" readonly></label>
+            </div>
+            <div class="row">
+              <label><span><span class="ko">핀 용량 합계</span><span class="en">Pin cap. total</span> (pF)</span><input id="pin_pf" readonly></label>
+              <label><span><span class="ko">선 길이 합계</span><span class="en">Wire total</span> (cm)</span><input id="length_cm" readonly></label>
+            </div>
+            <div class="row">
+              <label><span><span class="ko">선 용량</span><span class="en">Wire cap.</span> pF/cm</span><input id="pf_per_cm" inputmode="decimal" autocomplete="off"><small class="err" id="e-pf_per_cm"></small></label>
+              <label><span><span class="ko">브레드보드·커넥터</span><span class="en">Breadboard/connectors</span> (pF)</span><input id="extra_pf" inputmode="decimal" autocomplete="off"><small class="err" id="e-extra_pf"></small></label>
+            </div>
+            <div class="row">
+              <label><span>VOL max (V)</span><input id="vol" inputmode="decimal" autocomplete="off"><small class="err" id="e-vol"></small></label>
+              <label><span><span class="ko">싱크 전류</span><span class="en">Sink</span> IOL (mA)</span><input id="iol" inputmode="decimal" autocomplete="off"><small class="err" id="e-iol"></small></label>
+            </div>
+            <label><span><span class="ko">합성 풀업</span><span class="en">Combined pull-up</span> Rp_eff (kΩ)</span><input id="rp" readonly></label>
+            <p class="hintline"><span class="ko">점퍼선 ≈ 0.5–1 pF/cm · 브레드보드 한 줄 ≈ 2–5 pF</span><span class="en">Jumper ≈ 0.5–1 pF/cm · one breadboard strip ≈ 2–5 pF</span></p>
+          </section>
+          <section class="sub">
+            <h2><span class="ko">보드 위 부품 (값 수정 가능)</span><span class="en">Parts on the board (editable)</span></h2>
+            <div class="tablewrap"><table id="parts" class="parts"></table></div>
+            <p class="hintline"><span class="ko">풀업 칸을 비우면 그 부품의 풀업을 뗀 것으로 계산해요. 주소는 16진수(예: 0x68).</span><span class="en">Clear a pull-up cell to model removing it. Addresses are hex (e.g. 0x68).</span></p>
+          </section>
+        </div>
+        <ul id="results" class="results"></ul>
+        <figure class="plotcard">
+          <figcaption><span class="ko">SCL/SDA 파형 (한 클럭 주기, RC 상승)</span><span class="en">SCL/SDA waveform (one clock period, RC rise)</span></figcaption>
+          <canvas id="wave" class="wave" tabindex="0" role="img" aria-label="SCL/SDA waveform; arrow keys move the cursor"></canvas>
         </figure>
-        <section class="card">
-          <h2><span class="ko">결과</span><span class="en">Results</span></h2>
-          <ul id="results" class="results"></ul>
-        </section>
-      </div>
+        <figure class="plotcard">
+          <figcaption><span class="ko">Rp–Cb 허용 영역 (점 = 지금 회로)</span><span class="en">Rp–Cb window (dot = this board)</span></figcaption>
+          <canvas id="plot" class="plot" tabindex="0" role="img" aria-label="Rp versus Cb feasible window"></canvas>
+        </figure>
+        <p><button id="csv" type="button">CSV</button></p>
+        <p class="note">
+          <span class="ko">계획용 추정치입니다. 모든 풀업은 MCU 로직 전압에 연결된 것으로, 부품은 한 버스에 있는 것으로 봅니다. 직렬 저항, 누설 전류, 개별 부품의 입력 임계값, 링잉, 크로스토크, 레벨 시프터의 실제 동작은 고려하지 않습니다. 부품 값은 흔한 모듈 기준 예시이니 내 보드를 확인하세요. 실제 상승 시간은 오실로스코프로 측정하세요. 모델: I2C-bus specification의 표준 추정식, tf는 20 ns로 고정 가정.</span>
+          <span class="en">Planning estimate only. All pull-ups are assumed to go to the MCU logic rail and all parts share one bus segment. Ignores series resistors, leakage, input thresholds of specific parts, ringing, crosstalk and the real behaviour of level shifters. Part values are typical module examples — check your own boards. Measure the real rise time with a scope. Model: standard I2C-bus specification estimates; tf is assumed fixed at 20 ns.</span>
+        </p>
+      </details>
       <div id="tip" class="tip" role="status"></div>
-      <p class="note">
-        <span class="ko">계획용 추정치입니다. 직렬 저항, 누설 전류, 개별 부품의 입력 임계값, 링잉, 크로스토크, 레벨 시프터는 고려하지 않습니다. 실제 상승 시간은 오실로스코프로 측정하세요. 모델: I2C-bus specification의 표준 추정식, tf는 20 ns로 고정 가정.</span>
-        <span class="en">Planning estimate only. Ignores series resistors, leakage, input thresholds of specific parts, ringing, crosstalk and level shifters. Measure the real rise time with a scope. Model: standard I2C-bus specification estimates; tf is assumed fixed at 20 ns.</span>
-      </p>
     </section>
 
-    <aside id="settings" class="settings" aria-label="settings">
-      <button id="sheet-toggle" class="sheet-toggle" type="button"><span class="ko">설정</span><span class="en">Settings</span></button>
-      <div class="sheet-body">
-        <details class="card" open>
-          <summary><span class="ko">버스</span><span class="en">Bus</span></summary>
-          <label><span><span class="ko">공급 전압</span><span class="en">Supply</span> VDD (V)</span><input id="vdd" inputmode="decimal" autocomplete="off"><small class="err" id="e-vdd"></small></label>
-          <label><span><span class="ko">속도 모드</span><span class="en">Speed mode</span></span>
-            <select id="speed">
-              <option>Standard (100 kHz)</option>
-              <option selected>Fast (400 kHz)</option>
-              <option>Fast-mode Plus (1 MHz)</option>
-            </select></label>
-        </details>
-        <details class="card" open>
-          <summary><span class="ko">버스 용량</span><span class="en">Bus capacitance</span></summary>
-          <div class="row">
-            <label><span><span class="ko">디바이스 수</span><span class="en">Devices</span></span><input id="devices" inputmode="numeric" autocomplete="off"><small class="err" id="e-devices"></small></label>
-            <label><span><span class="ko">핀 용량</span><span class="en">Pin cap.</span> (pF)</span><input id="pin_pf" inputmode="decimal" autocomplete="off"><small class="err" id="e-pin_pf"></small></label>
-          </div>
-          <div class="row">
-            <label><span><span class="ko">배선/케이블 길이</span><span class="en">Trace/cable length</span> (cm)</span><input id="length_cm" inputmode="decimal" autocomplete="off"><small class="err" id="e-length_cm"></small></label>
-            <label><span>pF/cm</span><input id="pf_per_cm" inputmode="decimal" autocomplete="off"><small class="err" id="e-pf_per_cm"></small></label>
-          </div>
-          <p class="hintline"><span class="ko">PCB 약 1.0 pF/cm · 트위스트 케이블 ≈ 0.5–1 pF/cm</span><span class="en">PCB ≈ 1.0 pF/cm · twisted cable ≈ 0.5–1 pF/cm</span></p>
-          <label><span><span class="ko">추가 고정 용량 (커넥터, 프로브)</span><span class="en">Extra fixed (connectors, probe)</span> (pF)</span><input id="extra_pf" inputmode="decimal" autocomplete="off"><small class="err" id="e-extra_pf"></small></label>
-          <p class="total" id="cb-total"></p>
-        </details>
-        <details class="card" open>
-          <summary><span class="ko">드라이버</span><span class="en">Driver</span></summary>
-          <div class="row">
-            <label><span>VOL max (V)</span><input id="vol" inputmode="decimal" autocomplete="off"><small class="err" id="e-vol"></small></label>
-            <label><span><span class="ko">싱크 전류</span><span class="en">Sink</span> IOL (mA)</span><input id="iol" inputmode="decimal" autocomplete="off"><small class="err" id="e-iol"></small></label>
-          </div>
-        </details>
-        <details class="card" open>
-          <summary><span class="ko">풀업 저항</span><span class="en">Pull-up</span></summary>
-          <label><span><span class="ko">메인 풀업</span><span class="en">Main pull-up</span> Rp (kΩ)</span><input id="rp" inputmode="decimal" autocomplete="off"><small class="err" id="e-rp"></small></label>
-          <input id="rp_slider" type="range" min="0" max="1000" step="1" aria-label="Rp (log scale)">
-          <div class="row">
-            <label><span><span class="ko">병렬 풀업 모듈 수</span><span class="en">Modules with own pull-up</span></span><input id="n_extra" inputmode="numeric" autocomplete="off"><small class="err" id="e-n_extra"></small></label>
-            <label><span><span class="ko">모듈당 풀업</span><span class="en">Each module</span> (kΩ)</span><input id="r_extra" inputmode="decimal" autocomplete="off"><small class="err" id="e-r_extra"></small></label>
-          </div>
-          <p class="total" id="rp-eff"></p>
-        </details>
-      </div>
+    <aside id="palette" class="palette" aria-label="parts palette">
+      <button id="sheet-toggle" class="sheet-toggle" type="button"><span class="ko">부품 팔레트</span><span class="en">Parts palette</span></button>
+      <div id="palette-body" class="sheet-body"></div>
     </aside>
   </main>
-  <footer class="foot"><span class="ko">모든 계산은 브라우저 안에서만 실행됩니다. 입력값은 저장되거나 전송되지 않습니다. MIT 라이선스.</span><span class="en">Everything runs in your browser. Inputs are never stored or sent. MIT licensed.</span></footer>
+  <div id="ghost" class="ghost" aria-hidden="true"></div>
+  <footer class="foot"><span class="ko">모든 계산은 브라우저 안에서만 실행됩니다. 회로와 입력값은 저장되거나 전송되지 않습니다. MIT 라이선스.</span><span class="en">Everything runs in your browser. Boards and inputs are never stored or sent. MIT licensed.</span></footer>
 </div>
 </body>
 </html>
