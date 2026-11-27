@@ -5,6 +5,17 @@ Rust → WebAssembly, 100% 브라우저 내 실행.
 Breadboard I2C checker — rebuild your breadboard on screen and see at a glance whether I2C **works, is unstable, or fails**, and why.
 Rust → WebAssembly, runs 100% in the browser.
 
+▶ 바로 써 보기 / Try it now: 저장소 오른쪽 위 **About**의 웹사이트 링크 (GitHub Pages) / the website link in the repo **About** box.
+
+![회로를 바꾸면 판정이 바로 바뀌는 데모 / demo: the verdict changes as the circuit changes](docs/demo.gif)
+
+위 화면: 우노 + BME280(통신 됨) → 회로 저장 → MPU6050 두 개 추가(주소 충돌, 안 됨) → ESP32 + 모듈 4개(풀업 겹침, 안 됨) → 라즈베리파이 + 긴 선(불안정) → 5V 풀업 + 3.3V 칩(손상 위험).
+Above: Uno + BME280 (works) → pin the circuit → add two MPU6050 (address clash, fails) → ESP32 + 4 modules (pull-ups stack up, fails) → Pi + long wire (unstable) → 5 V pull-up on a 3.3 V chip (damage risk).
+
+| 3D 브레드보드 / 3D breadboard | 계산기 (그대로) / Calculator (unchanged) |
+|---|---|
+| ![3D breadboard](docs/screenshot.png) | ![calculator](docs/calculator.png) |
+
 [한국어](#한국어) · [English](#english)
 
 ---
@@ -17,7 +28,7 @@ Rust → WebAssembly, runs 100% in the browser.
    - MCU 보드: 아두이노 우노(5V), ESP32(3.3V), 라즈베리파이(3.3V, 1.8kΩ 풀업 내장)
    - 센서 모듈: BME280, MPU6050, SSD1306 OLED, VL53L0X, "10k 풀업 달린 모듈", 맨 칩(3.3V 전용)
    - 풀업 저항(E12 값 선택), 점퍼선(5/10/20/30/50 cm 선택), 레벨 시프터
-   - 각 모듈은 흔한 브레이크아웃 기준의 온보드 풀업·핀 용량·I2C 주소를 갖고 있으며 **자세히** 패널에서 수정할 수 있습니다.
+   - 각 모듈은 흔한 브레이크아웃 기준의 온보드 풀업·핀 용량·I2C 주소를 갖고 있으며 **계산기** 패널에서 수정할 수 있습니다.
    - 보드 위 부품을 누르면 선택되고(이름·풀업·주소 표시) **빼기** 버튼이나 Delete 키로 뺍니다(키보드: 보드 포커스 후 ←/→로 선택).
    - SDA/SCL 점퍼선은 고른 길이만큼 커지는 고리로 그려집니다.
    - **3D 보드** (WebGL2): 책상 위 브레드보드, MCU 보드(우노·ESP32·라즈베리파이), 센서 모듈, 색띠가 값과 맞는 풀업 저항, 점퍼선이
@@ -33,7 +44,7 @@ Rust → WebAssembly, runs 100% in the browser.
 3. **신호 보기** — 보드 아래 오실로스코프 띠가 선택한 속도의 SCL 파형을 아주 느리게 흘려 보여줍니다.
    상승 모서리는 실제 RC 곡선(`wave_v`)이며, VIH에 닿기 전에 떨어지는 비트는 빨갛게 깜빡입니다.
 4. **비교** — "이 회로 저장"으로 지금 보드를 A로 고정하고, 부품이나 값을 바꾸면 A와 지금의 판정·풀업 합성·상승 시간·버스 용량이 나란히 보입니다(메모리에만 저장, 새로고침하면 사라짐).
-5. **자세히** (기본 접힘) — 기존 계산기: 버스 값(pF/cm, 브레드보드 기생 용량, VOL, IOL) 수정, 부품별 풀업/핀 용량/주소/5V 허용 수정,
+5. **계산기** (기본 펼침, 3D 보드 아래) — 기존 계산기 그대로: 버스 값(pF/cm, 브레드보드 기생 용량, VOL, IOL) 수정, 부품별 풀업/핀 용량/주소/5V 허용 수정,
    Rp_min~Rp_max, 추천 E12 값, 상승 시간 파형, Rp–Cb 허용 영역 그래프, CSV 내보내기.
 
 ### 프리셋 (예시 값, 수정 가능)
@@ -100,7 +111,7 @@ MIT — `LICENSE` 참고. Copyright i2c-pull contributors.
    - MCU boards: Arduino Uno (5 V), ESP32 (3.3 V), Raspberry Pi (3.3 V, 1.8 kΩ on-board pull-ups)
    - Sensor modules: BME280, MPU6050, SSD1306 OLED, VL53L0X, "module with 10k pull-ups", bare chip (3.3 V only)
    - Pull-up resistor (pick an E12 value), jumper wire (pick 5/10/20/30/50 cm), level shifter
-   - Every module carries typical on-board pull-ups, pin capacitance and I2C address as presets, editable in **Details**.
+   - Every module carries typical on-board pull-ups, pin capacitance and I2C address as presets, editable in the **Calculator** panel.
    - Tap a part on the board to select it (name, pull-up, address), then **Remove** or press Delete (keyboard: focus the board,
      ←/→ to select).
    - SDA/SCL jumpers are drawn as loops that grow with the chosen wire length.
@@ -117,7 +128,7 @@ MIT — `LICENSE` 참고. Copyright i2c-pull contributors.
    edge is the real RC curve from `wave_v`; bits that fall before reaching VIH flash red.
 4. **Compare** — "Save this board" pins the current board as A; change any part or value to see A vs now side by side (verdict,
    combined pull-up, rise time, bus capacitance). Kept in memory only.
-5. **Details** (collapsed by default) — the original calculator: bus values (pF/cm, breadboard stray, VOL, IOL), per-part pull-up /
+5. **Calculator** (open by default, below the 3D board) — the original calculator, unchanged: bus values (pF/cm, breadboard stray, VOL, IOL), per-part pull-up /
    pin capacitance / address / 5 V-tolerance, Rp_min–Rp_max, E12 pick, rise-time waveform, Rp–Cb window plot, CSV export.
 
 ### Presets (illustrative values, editable)
