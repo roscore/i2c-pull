@@ -1,0 +1,9 @@
+[package]
+name = "ip_core"
+description = "Pure-Rust I2C pull-up and rise-time planning model"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]

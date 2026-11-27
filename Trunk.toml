@@ -1,0 +1,13 @@
+[build]
+target = "index.html"
+dist = "dist"
+public_url = "/i2c-pull/"
+filehash = false
+
+[tools]
+wasm_bindgen = "0.2.100"
+
+[[hooks]]
+stage = "post_build"
+command = "bash"
+command_arguments = ["tools/externalize_boot.sh"]

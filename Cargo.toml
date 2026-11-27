@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = ["crates/ip_core", "crates/ip_web"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["i2c-pull contributors"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+panic = "abort"
+codegen-units = 1

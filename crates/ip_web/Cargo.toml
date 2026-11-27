@@ -1,0 +1,24 @@
+[package]
+name = "ip_web"
+description = "Browser front end for I2C Pull (wasm-bindgen + web-sys)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ip_core = { path = "../ip_core" }
+wasm-bindgen = "=0.2.100"
+js-sys = "=0.3.77"
+
+[dependencies.web-sys]
+version = "=0.3.77"
+features = [
+  "Window", "Document", "Element", "HtmlElement", "HtmlInputElement", "HtmlSelectElement",
+  "HtmlCanvasElement", "HtmlAnchorElement", "CanvasRenderingContext2d", "Event", "EventTarget",
+  "PointerEvent", "MouseEvent", "KeyboardEvent", "DomRect", "Blob", "BlobPropertyBag", "Url",
+  "CssStyleDeclaration", "DomTokenList", "Node", "NodeList", "console",
+]
